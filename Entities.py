@@ -26,10 +26,10 @@ class Car:
         self.y_module_speed = 7
         self.x_speed = 0
         self.y_speed = 0
-        self.x_y_center = (140, 170)
-        self.width = 20
-        self.height = 20
+        self.x_y_center = (Aux.INITIAL_X_COORDINATE, Aux.INITIAL_Y_COORDINATE)
+        self.width = self.height = Aux.CAR_SIZE
         self.vision_step = 5
+        self.image = Aux.RHOMBUS
         self.angle = 0
         self.vertices_coo = self.update_vertices()
         self.vision_coo = None
@@ -72,14 +72,16 @@ class Car:
         diagonal_right_distance = self.get_distance(screen, "front-right")
         return frontal_distance, left_distance, right_distance, diagonal_left_distance, diagonal_right_distance
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface):
         # drawing squared car
-        pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[0], self.vertices_coo[1])  # upper line
+        screen.blit(self.image, self.x_y_center)
+        """pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[0], self.vertices_coo[1])  # upper line
         pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[2], self.vertices_coo[3])  # bottom line
         pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[0], self.vertices_coo[2])  # left line
-        pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[1], self.vertices_coo[3])  # right line
+        pygame.draw.line(screen, Aux.CAR_COLOR, self.vertices_coo[1], self.vertices_coo[3])  # right line"""
 
     def movement(self, screen):
+        pass
         print(self.vision(screen))
         self.angle += 45  #*self.inversion
         # self.inversion = -1*self.inversion
@@ -105,7 +107,7 @@ class World:
         self.clock = pygame.time.Clock()
 
     def draw(self):
-        pygame.draw.rect(self.screen, (0, 0, 0), (0, 0, Aux.WINDOW_LENGTH, Aux.WINDOW_HEIGHT))  # Background
+        self.screen.fill((0, 0, 0))  # Background
         self.road.draw(self.screen)
         self.car.draw(self.screen)
 

@@ -2,6 +2,8 @@ import pygame
 import random
 import math
 
+pygame.init()
+
 
 def road_1(screen, color):
     road_components = [(75, 30, 900, 10), (75, 670, 900, 10), (75, 40, 10, 630), (965, 40, 10, 630),
@@ -44,3 +46,16 @@ CAR_COLOR = (0, 255, 255)
 WINDOW_LENGTH = 1080
 WINDOW_HEIGHT = 720
 FRAME_RATE = 1
+
+INITIAL_X_COORDINATE = 140
+INITIAL_Y_COORDINATE = 170
+CAR_SIZE = 20
+
+SQUARE = pygame.Surface((CAR_SIZE, CAR_SIZE))
+SQUARE.fill(CAR_COLOR)
+
+RHOMBUS = pygame.Surface((CAR_SIZE, CAR_SIZE), pygame.SRCALPHA)
+rotated_image = pygame.transform.rotate(RHOMBUS, 45)
+
+
+# CAR_IMAGES = {True: SQUARE, False: RHOMBUS}
