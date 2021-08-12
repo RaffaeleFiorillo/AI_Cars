@@ -1,5 +1,5 @@
 import pygame
-import random
+import random as r
 import math
 
 pygame.init()
@@ -31,6 +31,10 @@ def sin(angle):
 
 def cos(angle):
     return round(math.cos(math.radians(angle)))
+
+
+def random():
+    return r.random()
 
 
 def vector_distance(x_origin, y_origin, x_end, y_end):
@@ -67,10 +71,12 @@ FRAME_RATE = 10
 INITIAL_X_COORDINATE = 140
 INITIAL_Y_COORDINATE = 170
 CAR_SIZE = 20
-CAR_SPEED_MODULE = 10
+CAR_SPEED_MODULE = 15
 DRAWING_CENTER_SQUARE = (-CAR_SIZE // 2, -CAR_SIZE // 2)
 adjust = round(-CAR_SIZE * (1 - 1 / math.sqrt(CAR_SIZE)))
 DRAWING_CENTER_RHOMBUS = (adjust, adjust)
 del adjust
+
+MUTATION_POSSIBILITY = 0.2
 
 # CAR_IMAGES = {True: SQUARE, False: RHOMBUS}

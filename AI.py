@@ -1,91 +1,59 @@
 import random
 import pygame
-import math
-import Entities as Ent
-# import functions
+import Auxiliar as Aux
 
 
-def treino_jogo_autom (screen, background, individuo):
-# Entidades
-    print(individuo.weights, individuo.bias)
-    car = Ent.Carro()
-    estrada = Ent.estrada()
-    lista_obstaculos = Ent.Obstacles()
-    lista_parts = Ent.parts()
-# loop stuff
-    clock = pygame.time.Clock()
-    keepGoing2 = True
-    time_passed = 0
-    escolha = 0
-# Loop
-    while keepGoing2:
-        time_passed += clock.tick(100) / (33 * 30)
-        # terminate execution
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-# player effects
-        if not car.keepmoving and car.y in car.valores_y:
-            car.visao(screen)
-            escolha = individuo.activation_function(car.valores_vistos)
-        if escolha == 1:
-            car.movimento("DWN")
-            car.direction = "DWN"
-        elif escolha == -1:
-            car.movimento("UP")
-            car.direction = "UP"
-        car.contin_mov()
-# colisao
-        keepGoing2 = car.colisao_obstaculo(lista_obstaculos.lista)
-        lista_parts.lista = car.colisao_parts(lista_parts.lista)
-# parts effects
-        lista_parts.remover_parts(lista_obstaculos.lista)
-        lista_parts.criar_parts()
-# obstacles effects
-        lista_obstaculos.remover_obstaculos()
-        lista_obstaculos.criar_obstaculos()
-# Refresh screen
-        functions.refresh_game(screen, background, [estrada, lista_parts, lista_obstaculos, car])
-        #print(time_passed)
-        if time_passed >= 500:
-            break
-# Individuo
-    #individuo.time_alive = time_passed
-    #individuo.parts = car.pecas
-    #individuo.fitness_level()
-    #individuo.gravar_existencia()
-
-
-class _individuo:
-    def __init__(self, input_number, name, mc):
+class mind:
+    def __init__(self, name):
         self.name = name
-        self.inputs = input_number
-        self.weights = []
-        self.bias = []
-        self.mutation_chance = mc
+        self.weights = [[], [], [], []]
+        self.bias = [[], [], [], []]
+        self.mutation_chance = Aux.MUTATION_POSSIBILITY
         self.fitness = 0
+        self.energy = 1000
+        self.distance_traveled = 0
         self.time_alive = 0
-        self.parts = 0
-        self.necessidade = True
 
     def fitness_level(self):
-        self.fitness = self.parts * 0.2 + self.time_alive * 0.8
+        power = (1000-self.energy)*self.time_alive
+        speed = self.distance_traveled/self.time_alive
+        self.fitness = power*0.5 + speed*0.5
 
-    def gravar_existencia(self):
-        ficheiro = open("parameters/geracao_atual.txt", "a")
-        ficheiro.write(f"F:{self.fitness};W:{self.weights};B:{self.bias}\n")
-        ficheiro.close()
+    def save_existence(self):
+        file = open("parameters/current_generation.txt", "a")
+        file.write(f"F:{self.fitness};W:{self.weights};B:{self.bias}\n")
+        file.close()
 
     def get_wb(self, w, b):
         self.weights = w
         self.bias = b
 
-    def criar_individuo(self):
-        self.weights = [random.random() * random.choice([1, -1]) for w in range(self.inputs)]
-        self.bias = [random.random() * random.choice([1, -1]) for b in range(self.inputs)]
+    @staticmethod
+    def create_mind_structure():
+        # weights/biases number for layer 1: [2, 2, 5, 2, 2]
+        layer_1 = [(Aux.random(), Aux.random()) for _ in range(5)]
+        layer_1[2] += (Aux.random(), Aux.random())
+
+        # weights/biases number for layer 2: [1, 1, 2, 2, 1, 1]
+        layer_2 = [Aux.random() for _ in range(6)]
+        layer_2[2] = (layer_2[2], Aux.random())
+        layer_2[3] = (layer_2[3], Aux.random())
+
+        # weights/biases number for layer 3: [1, 2, 2, 1]
+        layer_3 = [Aux.random() for _ in range(4)]
+        layer_3[1] = (layer_3[1], Aux.random())
+        layer_3[2] = (layer_3[2], Aux.random())
+
+        # weights/biases number for layer 4: [1, 2, 2, 1]
+        layer_4 = [Aux.random() for _ in range(3)]
+        return [layer_1, layer_2, layer_3, layer_4]
+
+    def create_mind(self):
+        self.weights = self.create_mind_structure()
+        self.bias = self.create_mind_structure()
 
     def cross_over(self, individuo2):
-        cromossoms = [i for i in range(self.inputs)]
+        """cromossoms = [i for i in range(self.inputs)]
         cromossoms_individuo_1 = []
         for i in range(random.randint(1, len(cromossoms) // 2)):
             cromossoms_individuo_1.append(random.choice(cromossoms))
@@ -93,20 +61,10 @@ class _individuo:
         cromossoms_individuo_2 = cromossoms
         weights_new_individuo = [self.weights[i] for i in cromossoms_individuo_1] + [individuo2.weights[y] for y in cromossoms_individuo_2]
         bias_new_individuo = [self.bias[i] for i in cromossoms_individuo_1] + [individuo2.bias[y] for y in cromossoms_individuo_2]
-        return [weights_new_individuo, bias_new_individuo]
+        return [weights_new_individuo, bias_new_individuo]"""
 
     def activation_function(self, variables):
-        soma = 0
-        if self.necessidade:
-            for i in range(len(variables)-1):
-                soma += self.weights[i] * variables[i] + self.bias[i]
-            refined_value = math.tanh(soma)
-            if refined_value >= 0.70:
-                return 1
-            elif refined_value <= -0.70:
-                return -1
-            else:
-                return 0
+        pass
 
     def mutation(self):
         new_w = []
@@ -124,10 +82,10 @@ class _individuo:
         self.bias = new_b
 
     def breed(self, individuo_2, i_name):
-        novo_individuo = _individuo(self.inputs, i_name, self.mutation_chance)
+        """novo_individuo = _individuo(self.inputs, i_name, self.mutation_chance)
         novo_individuo.weights, novo_individuo.bias = self.cross_over(individuo_2)
         novo_individuo.mutation()
-        return novo_individuo
+        return novo_individuo"""
 
 
 class Population:
@@ -142,10 +100,10 @@ class Population:
         self.criar_individuos_novos()
 
     def criar_individuos_novos(self):
-        for i in range(self.max_indiv):
+        """for i in range(self.max_indiv):
             self.lista.append(_individuo(self.numero_input, i, self.mutation_chance))
             self.lista[-1].criar_individuo()
-            #print(f"name: {self.lista[ -1].name},weights:{self.lista[ -1].weights}, bias: {self.lista[ -1].bias}")
+            #print(f"name: {self.lista[ -1].name},weights:{self.lista[ -1].weights}, bias: {self.lista[ -1].bias}")"""
 
     def mostrar_atributos_individuos(self):
         for ind in self.lista:
@@ -197,31 +155,3 @@ class Population:
             self.lista.append(self.best_indiv.breed(self.second_best, i+2))
             self.lista.append(self.second_best.breed(self.best_indiv, i+3))
 
-pygame.init()
-
-# screen
-screen = pygame.display.set_mode((1080, 700))
-pygame.display.set_caption("Fast and Curious-Beta")
-# background
-background = pygame.Surface(screen.get_size())
-background = background.convert()
-background.fill((0, 255, 0))
-keepGoing = True
-pop = Population(4, 3, 0.2)
-w = [0.9849777777777572, 0.03444444444426724, 0.28495822222222262, 0.14811111117294833, 1.0254444434875984]
-b = [0.2670813587084078, -0.6691533200275781, -0.5723370239650385, 0.25406116993577665, -0.486196069971221]
-pop.lista[0].get_wb(w, b)
-pop.lista[1].get_wb(w, b)
-#pop.ler_atributos_individuos()
-pop.select_best()
-pop.criar_familia()
-while keepGoing:
-    print(f"Geracao: {pop.generacao}")
-    for p in pop.lista:
-        keepGoing = treino_jogo_autom(screen, background, p)
-        if keepGoing is None:
-            keepGoing = True
-    pop.ler_atributos_individuos()
-    pop.select_best()
-    pop.gravar_atributos_individuo()
-    pop.criar_familia()

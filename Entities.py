@@ -6,6 +6,7 @@
 
 # ---------------------------------------------------- IMPORTS ---------------------------------------------------------
 import pygame
+import AI
 import Auxiliar as Aux
 
 # ---------------------------------------------------- SOUNDS ----------------------------------------------------------
@@ -21,34 +22,24 @@ space_between_obstacles = [o for o in range(300, 1290, obstacles_distance)]
 
 # ----------------------------------------------------- CAR ------------------------------------------------------------
 class Car:
-    def __init__(self):
+    def __init__(self, name):
         self.speed_module= Aux.CAR_SPEED_MODULE
-        self.x_speed = 0
-        self.y_speed = 0
+        self.mind = AI.mind(name)
         self.x_y_center = (Aux.INITIAL_X_COORDINATE, Aux.INITIAL_Y_COORDINATE)
         self.width = self.height = Aux.CAR_SIZE
-        self.vision_step = 5
+        self.vision_step = 2
         self.images = {True: Aux.get_square_image(), False: Aux.get_rhombus_image()}
-        self.y_x_adjusts = {True: Aux.DRAWING_CENTER_SQUARE, False: Aux.DRAWING_CENTER_RHOMBUS}
+        self.x_y_adjusts = {True: Aux.DRAWING_CENTER_SQUARE, False: Aux.DRAWING_CENTER_RHOMBUS}
         self.image_is_square = True
-        self.y_x_adjust = self.y_x_adjusts[self.image_is_square]
+        self.y_x_adjust = self.x_y_adjusts[self.image_is_square]
         self.image = self.images[self.image_is_square]
         self.hit_box = self.image.get_rect()
         self.angle = 0
         self.alive = True
-        self.seen_values = []
-
-    def obstacle_collision(self, road_components):
-        for component in road_components:
-            if collide := self.hit_box.colliderect(component):
-                # f.play(hit_sound)
-                return True
-            else:
-                print(collide)
-        return False
 
     def get_distance(self, screen: pygame.Surface, vision_type: str):
         angles = {"front": 90, "left": 0, "right": 180, "front-left": 45, "front-right": 135}
+        min_distance_for_death = {"front": 20, "left": 7, "right": 7, "front-left": 29, "front-right": 29}
         additional_angle = angles[vision_type]
         distance = 0
         x_coo, y_coo = self.x_y_center
@@ -61,7 +52,7 @@ class Car:
                 color = Aux.ROAD_COLOR
                 distance = 0
             if color == Aux.ROAD_COLOR:
-                if (distance := round(distance)) <= 22:
+                if (distance := round(distance)) <= min_distance_for_death[vision_type]:
                     print("car crashed")
                     self.alive = False
 
@@ -85,7 +76,7 @@ class Car:
 
     def rotate_car_image(self):
         self.image_is_square = not self.image_is_square
-        self.y_x_adjust = self.y_x_adjusts[self.image_is_square]
+        self.y_x_adjust = self.x_y_adjusts[self.image_is_square]
         self.image = self.images[self.image_is_square]
 
     def turn_left(self):
@@ -96,23 +87,13 @@ class Car:
         self.angle = (self.angle+45) % 360
         self.rotate_car_image()
 
-    def go_left(self):
-        self.turn_left()
-        self.x_y_center = (self.x_y_center[0]-20, self.x_y_center[1])
-
-    def go_right(self):
-        self.turn_right()
-        self.x_y_center = (self.x_y_center[0]+20, self.x_y_center[1])
-
-    def go_down(self):
-        self.x_y_center = (self.x_y_center[0], self.x_y_center[1]+20)
-
-    def go_up(self):
-        self.x_y_center = (self.x_y_center[0], self.x_y_center[1]-20)
+    def move_ahead(self):
+        updated_x_coo = self.x_y_center[0] + self.speed_module * Aux.sin(-self.angle)
+        updated_y_coo = self.x_y_center[1] + self.speed_module * Aux.cos(self.angle)
+        self.x_y_center = updated_x_coo, updated_y_coo
 
     def movement(self, screen):
-        print(self.vision(screen))
-
+        print(f"vision: {self.vision(screen)} | angle: {self.angle}")
 
 # ---------------------------------------------------- ROAD ------------------------------------------------------------
 class Road:
@@ -133,23 +114,23 @@ class Road:
 class World:
     def __init__(self, screen, road_color, road_type=0):
         self.screen = screen
+        self.screen_width = self.screen.get_size()[0]
+        self.screen_height = self.screen.get_size()[1]
         self.road = Road(Aux.ROAD_RECTANGLES[road_type], road_color)
-        self.car = Car()
+        self.car = Car(0)
         self.run = True
         self.clock = pygame.time.Clock()
-
-    def draw(self):
-        self.screen.fill((0, 0, 0))  # Background
-        self.road.draw(self.screen)
-        self.car.draw(self.screen)
 
     def car_is_alive(self):
         return self.car.alive
 
     def refresh(self):
-        self.draw()
+        self.screen.fill((0, 0, 0))  # Background
+        self.road.draw(self.screen)
         self.car.movement(self.screen)
+        self.car.draw(self.screen)
         self.run = self.car_is_alive()
+
         pygame.display.update()
 
     def loop(self):
@@ -162,12 +143,9 @@ class World:
                     return False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
-                        self.car.go_left()
+                        self.car.turn_left()
                     elif event.key == pygame.K_RIGHT:
-                        self.car.go_right()
-                    elif event.key == pygame.K_DOWN:
-                        self.car.go_down()
+                        self.car.turn_right()
                     elif event.key == pygame.K_UP:
-                        self.car.go_up()
-
+                        self.car.move_ahead()
             self.refresh()
