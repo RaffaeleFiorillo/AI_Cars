@@ -6,7 +6,7 @@ LENGTH = Aux.WINDOW_LENGTH
 HEIGHT = Aux.WINDOW_HEIGHT
 LABEL = "AI CARS"
 
-ROAD = 0  # integer from 0 to 4 representing the type of road. each road has a different shape
+ROAD = 1  # integer from 0 to 4 representing the type of road. each road has a different shape
 ROAD_COLOR = Aux.ROAD_COLOR
 
 screen = pygame.display.set_mode((LENGTH, HEIGHT))

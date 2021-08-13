@@ -53,12 +53,13 @@ class Car:
                 distance = 0
             if color == Aux.ROAD_COLOR:
                 if int(distance) <= min_distance_for_death[vision_type]:
-                    print("car crashed")
+                    # print("car crashed")
                     self.alive = False
 
                 return distance
-            distance += Aux.vector_distance(self.x_y_center[0], self.x_y_center[1], x_coo, y_coo)
-            pygame.draw.circle(screen, Aux.YELLOW, (x_coo, y_coo), 1, 1)
+            elif color != Aux.CAR_COLOR:
+                distance += Aux.vector_distance(self.x_y_center[0], self.x_y_center[1], x_coo, y_coo)
+                pygame.draw.circle(screen, Aux.YELLOW, (x_coo, y_coo), 1, 1)
 
     def vision(self, screen):
         frontal_distance = self.get_distance(screen, "front")
@@ -82,10 +83,12 @@ class Car:
     def turn_left(self):
         self.angle = (self.angle-45) % 360
         self.rotate_car_image()
+        self.mind.directions_taken["left"] +=1
 
     def turn_right(self):
         self.angle = (self.angle+45) % 360
         self.rotate_car_image()
+        self.mind.directions_taken["right"] +=1
 
     def update_mind(self, distance):
         self.mind.distance_traveled += distance
@@ -96,7 +99,7 @@ class Car:
             self.alive = False
 
     def move_ahead(self, how):
-        print(how)
+        # print(how)
         if how < - 0.5:
             self.turn_left()
         elif how > 0.5:
@@ -111,6 +114,7 @@ class Car:
     def movement(self, screen):
         decision_value = self.mind.activation_function(self.vision(screen))
         self.move_ahead(decision_value)
+        pass
 
 
 # ---------------------------------------------------- ROAD ------------------------------------------------------------
@@ -176,8 +180,8 @@ class World:
     def refresh(self):
         self.screen.fill((0, 0, 0))  # Background
         self.road.draw(self.screen)
-        self.cars[self.current_car_index].movement(self.screen)
         self.cars[self.current_car_index].draw(self.screen)
+        self.cars[self.current_car_index].movement(self.screen)
         self.run = self.car_is_alive()
 
         pygame.display.update()
@@ -193,6 +197,7 @@ class World:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.cars[self.current_car_index].alive = False
+                        self.cars[self.current_car_index].mind.monotony_should_be_1 = True
             self.refresh()
 
     def simulation_loop(self):
@@ -202,7 +207,7 @@ class World:
 
             self.time_passed = 0
             self.current_car_index += 1
+            self.run = True
             if self.current_car_index == self.max_cars:
                 self.current_car_index = 0
                 self.create_new_generation()
-                self.run = True

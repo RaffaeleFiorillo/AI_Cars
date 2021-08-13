@@ -17,8 +17,16 @@ def normalize(number):
     return number/150000
 
 
+def normal_minus1_1(number, min_value=-1, max_value=1):
+    return 2*(number-min_value)/(max_value-min_value) -1
+
+
 def module(number):
     return number*-1 if number < 0 else number
+
+
+def vectorized(n1, n2):
+    return math.sqrt(math.pow(n1, 2)+math.pow(n2, 2))
 
 
 def random():
@@ -65,19 +73,19 @@ ROAD_COLOR = (0, 0, 255)
 MAX_CAR_NUMBER = 20
 WINDOW_LENGTH = 1080
 WINDOW_HEIGHT = 720
-FRAME_RATE = 100
+FRAME_RATE = 10
 
 INITIAL_X_COORDINATE = 140
 INITIAL_Y_COORDINATE = 170
 CAR_COLOR = (0, 255, 255)
 CAR_SIZE = 20
 CAR_SPEED_MODULE = 15
-DRAWING_CENTER_SQUARE = (-CAR_SIZE // 2, -CAR_SIZE // 2)
+DRAWING_CENTER_SQUARE = (-CAR_SIZE//2, -CAR_SIZE//2)
 adjust = round(-CAR_SIZE * (1 - 1 / math.sqrt(CAR_SIZE)))
 DRAWING_CENTER_RHOMBUS = (adjust, adjust)
 del adjust
 
-MUTATION_POSSIBILITY = 0.2
+MUTATION_POSSIBILITY = 0.4
 FILE_NAME = "best_minds.txt"
 
 # CAR_IMAGES = {True: SQUARE, False: RHOMBUS}
