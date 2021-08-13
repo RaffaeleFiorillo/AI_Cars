@@ -33,8 +33,26 @@ def cos(angle):
     return round(math.cos(math.radians(angle)))
 
 
+def normalize(number):
+    return number/150000
+
+
+def module(number):
+    return number*-1 if number < 0 else number
+
+
 def random():
     return r.random()
+
+
+def random_choice(given_list):
+    return r.choice(given_list)
+
+
+# sorts minds based on fitness level in ascending order
+def sort_minds(minds):
+    minds.sort(key=lambda mind: mind.fitness)
+    return minds
 
 
 def vector_distance(x_origin, y_origin, x_end, y_end):
@@ -63,13 +81,14 @@ ROAD_RECTANGLES = [rectangles_1, rectangles_2, rectangles_3, rectangles_4]  # re
 
 YELLOW = (255, 255, 0)
 ROAD_COLOR = (0, 0, 255)
-CAR_COLOR = (0, 255, 255)
+MAX_CAR_NUMBER = 20
 WINDOW_LENGTH = 1080
 WINDOW_HEIGHT = 720
 FRAME_RATE = 10
 
 INITIAL_X_COORDINATE = 140
 INITIAL_Y_COORDINATE = 170
+CAR_COLOR = (0, 255, 255)
 CAR_SIZE = 20
 CAR_SPEED_MODULE = 15
 DRAWING_CENTER_SQUARE = (-CAR_SIZE // 2, -CAR_SIZE // 2)
@@ -78,5 +97,6 @@ DRAWING_CENTER_RHOMBUS = (adjust, adjust)
 del adjust
 
 MUTATION_POSSIBILITY = 0.2
+FILE_NAME = "best_minds.txt"
 
 # CAR_IMAGES = {True: SQUARE, False: RHOMBUS}

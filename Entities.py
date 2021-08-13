@@ -22,9 +22,9 @@ space_between_obstacles = [o for o in range(300, 1290, obstacles_distance)]
 
 # ----------------------------------------------------- CAR ------------------------------------------------------------
 class Car:
-    def __init__(self, name):
+    def __init__(self, mind):
         self.speed_module= Aux.CAR_SPEED_MODULE
-        self.mind = AI.mind(name)
+        self.mind = mind
         self.x_y_center = (Aux.INITIAL_X_COORDINATE, Aux.INITIAL_Y_COORDINATE)
         self.width = self.height = Aux.CAR_SIZE
         self.vision_step = 2
@@ -52,7 +52,7 @@ class Car:
                 color = Aux.ROAD_COLOR
                 distance = 0
             if color == Aux.ROAD_COLOR:
-                if (distance := round(distance)) <= min_distance_for_death[vision_type]:
+                if int(distance) <= min_distance_for_death[vision_type]:
                     print("car crashed")
                     self.alive = False
 
@@ -87,13 +87,31 @@ class Car:
         self.angle = (self.angle+45) % 360
         self.rotate_car_image()
 
-    def move_ahead(self):
-        updated_x_coo = self.x_y_center[0] + self.speed_module * Aux.sin(-self.angle)
-        updated_y_coo = self.x_y_center[1] + self.speed_module * Aux.cos(self.angle)
+    def update_mind(self, distance):
+        self.mind.distance_traveled += distance
+        self.mind.time_alive += 0.01
+        self.mind.energy -= 1
+        if self.mind.energy <= 0:
+            self.mind.energy = 0
+            self.alive = False
+
+    def move_ahead(self, how):
+        if how < 0:
+            self.turn_left()
+        elif how > 0:
+            self.turn_right()
+        module = Aux.module(how)
+        updated_x_coo = round(self.x_y_center[0] + (self.speed_module * Aux.sin(-self.angle))*module)
+        updated_y_coo = round(self.x_y_center[1] + (self.speed_module * Aux.cos(self.angle))*module)
+
+        distance = Aux.vector_distance(self.x_y_center[0], self.x_y_center[1], updated_x_coo, updated_y_coo)
         self.x_y_center = updated_x_coo, updated_y_coo
+        self.update_mind(distance)
 
     def movement(self, screen):
-        print(f"vision: {self.vision(screen)} | angle: {self.angle}")
+        decision_value = self.mind.activation_function(self.vision(screen))
+        self.move_ahead(decision_value)
+
 
 # ---------------------------------------------------- ROAD ------------------------------------------------------------
 class Road:
@@ -117,35 +135,73 @@ class World:
         self.screen_width = self.screen.get_size()[0]
         self.screen_height = self.screen.get_size()[1]
         self.road = Road(Aux.ROAD_RECTANGLES[road_type], road_color)
-        self.car = Car(0)
+        self.max_cars = Aux.MAX_CAR_NUMBER
+        self.cars = [Car(AI.Mind(i)) for i in range(self.max_cars)]
+        self.current_car_index = 0
+        self.time_passed = 0
+        self.current_generation = 0
         self.run = True
         self.clock = pygame.time.Clock()
 
+    def save_best_minds(self, minds):
+        file = open(Aux.FILE_NAME, "a")
+        file.write(f"Generation {self.current_generation}: \n")
+        file.close()
+        for mind in minds:
+            mind.save_existence()
+        file = open(Aux.FILE_NAME, "a")
+        file.write("\n###############################################\n\n")
+        file.close()
+
+    def breed_minds(self, minds):
+        new_minds = []
+        for i in range(3):
+            for y in range(5):
+                new_minds.append(minds[i].breed(minds[y]))
+        other_minds = [AI.Mind(i) for i in range(15, 20)]
+        return new_minds + other_minds
+
+    def create_new_generation(self):
+        self.current_generation += 1
+        sorted_minds = Aux.sort_minds([car.mind for car in self.cars])
+        best_minds = sorted_minds[-5:]
+        self.save_best_minds(best_minds)
+        new_generation_minds = self.breed_minds(best_minds)
+        self.cars = [Car(mind) for mind in new_generation_minds]
+
     def car_is_alive(self):
-        return self.car.alive
+        return self.cars[self.current_car_index].alive
 
     def refresh(self):
         self.screen.fill((0, 0, 0))  # Background
         self.road.draw(self.screen)
-        self.car.movement(self.screen)
-        self.car.draw(self.screen)
+        self.cars[self.current_car_index].mind.time_alive = self.time_passed
+        self.cars[self.current_car_index].movement(self.screen)
+        self.cars[self.current_car_index].draw(self.screen)
         self.run = self.car_is_alive()
 
         pygame.display.update()
 
     def loop(self):
-        time_passed = 0
+        self.time_passed = 0
         while self.run:
-            time_passed += self.clock.tick(Aux.FRAME_RATE) / (33 * 30)
+            print(self.cars[self.current_car_index].mind.weights)
+            self.time_passed += self.clock.tick(Aux.FRAME_RATE) / (33 * 30)
             # terminate execution
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
-                        self.car.turn_left()
-                    elif event.key == pygame.K_RIGHT:
-                        self.car.turn_right()
-                    elif event.key == pygame.K_UP:
-                        self.car.move_ahead()
+                        pass
             self.refresh()
+
+    def simulation_loop(self):
+        while True:
+            self.loop()
+            self.current_car_index += 1
+            self.time_passed = 0
+            if self.current_car_index > self.max_cars:
+                self.current_car_index = 0
+                self.create_new_generation()
+                self.run = True

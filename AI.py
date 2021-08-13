@@ -1,18 +1,24 @@
-import random
-import pygame
 import Auxiliar as Aux
 
 
-class mind:
-    def __init__(self, name):
-        self.name = name
+class Mind:
+    def __init__(self, name, new_born=True):
+        self.name = str(name)
         self.weights = [[], [], [], []]
         self.bias = [[], [], [], []]
         self.mutation_chance = Aux.MUTATION_POSSIBILITY
         self.fitness = 0
-        self.energy = 1000
+        self.energy = 10
         self.distance_traveled = 0
         self.time_alive = 0
+        if new_born:
+            self.create_mind()
+
+    def __copy__(self):
+        new_mind = Mind(f"{self.name}_copy", False)
+        new_mind.weights = self.bias
+        new_mind.bias = self.bias
+        return new_mind
 
     def fitness_level(self):
         power = (1000-self.energy)*self.time_alive
@@ -20,7 +26,7 @@ class mind:
         self.fitness = power*0.5 + speed*0.5
 
     def save_existence(self):
-        file = open("parameters/current_generation.txt", "a")
+        file = open(Aux.FILE_NAME, "a")
         file.write(f"F:{self.fitness};W:{self.weights};B:{self.bias}\n")
         file.close()
 
@@ -28,130 +34,122 @@ class mind:
         self.weights = w
         self.bias = b
 
-    @staticmethod
-    def create_mind_structure():
+    def create_mind_structure(self):
         # weights/biases number for layer 1: [2, 2, 5, 2, 2]
-        layer_1 = [(Aux.random(), Aux.random()) for _ in range(5)]
-        layer_1[2] += (Aux.random(), Aux.random())
+        layer_1 = [(self.mutate_value(Aux.random()), self.mutate_value(Aux.random())) for _ in range(5)]
+        layer_1[2]+=(self.mutate_value(Aux.random()), self.mutate_value(Aux.random()), self.mutate_value(Aux.random()))
 
-        # weights/biases number for layer 2: [1, 1, 2, 2, 1, 1]
-        layer_2 = [Aux.random() for _ in range(6)]
-        layer_2[2] = (layer_2[2], Aux.random())
-        layer_2[3] = (layer_2[3], Aux.random())
+        # weights/biases number for layer 2: [1, 2, 1, 1, 2, 1]
+        layer_2 = [self.mutate_value(Aux.random()) for _ in range(6)]
+        layer_2[1] = (layer_2[2], self.mutate_value(Aux.random()))
+        layer_2[4] = (layer_2[3], self.mutate_value(Aux.random()))
 
         # weights/biases number for layer 3: [1, 2, 2, 1]
-        layer_3 = [Aux.random() for _ in range(4)]
-        layer_3[1] = (layer_3[1], Aux.random())
-        layer_3[2] = (layer_3[2], Aux.random())
+        layer_3 = [self.mutate_value(Aux.random()) for _ in range(4)]
+        layer_3[1] = (layer_3[1], self.mutate_value(Aux.random()))
+        layer_3[2] = (layer_3[2], self.mutate_value(Aux.random()))
 
         # weights/biases number for layer 4: [1, 2, 2, 1]
-        layer_4 = [Aux.random() for _ in range(3)]
+        layer_4 = [self.mutate_value(Aux.random()) for _ in range(3)]
+        return [layer_1, layer_2, layer_3, layer_4]
+
+    @staticmethod
+    def mutate_value(value):
+        if Aux.random() > 0.4:  # invert value's signal
+            value *= Aux.random_choice([-1, 1])
+        if Aux.random() > 0.4:   # increase or decrease value
+            value += Aux.random_choice([-1, 1]) * (Aux.random()/Aux.random_choice([1000, 100, 10]))
+        return value
+
+    def mutate(self, values):
+        if type(values) is tuple:
+            new_tuple = (self.mutate_value(value) if Aux.random()>=self.mutation_chance else value for value in values)
+            return tuple(new_tuple)
+        return self.mutate_value(values) if Aux.random() >= self.mutation_chance else values
+
+    def cross_over(self, layers1, layers2):
+        # cross over for layer 1
+        layer_1 = [self.mutate(value1) if Aux.random() > 0.5 else self.mutate(value2) for value1, value2
+                   in zip(layers1[0], layers2[0])]
+
+        # cross over for layer 2
+        layer_2 = [self.mutate(value1) if Aux.random() > 0.5 else self.mutate(value2) for value1, value2
+                   in zip(layers1[1], layers2[1])]
+
+        # cross over for layer 3
+        layer_3 = [self.mutate(value1) if Aux.random() > 0.5 else self.mutate(value2) for value1, value2
+                   in zip(layers1[2], layers2[2])]
+
+        # cross over for layer 4
+        layer_4 = [self.mutate(value1) if Aux.random() > 0.5 else self.mutate(value2) for value1, value2
+                   in zip(layers1[3], layers2[3])]
+
         return [layer_1, layer_2, layer_3, layer_4]
 
     def create_mind(self):
         self.weights = self.create_mind_structure()
         self.bias = self.create_mind_structure()
 
-    def cross_over(self, individuo2):
-        """cromossoms = [i for i in range(self.inputs)]
-        cromossoms_individuo_1 = []
-        for i in range(random.randint(1, len(cromossoms) // 2)):
-            cromossoms_individuo_1.append(random.choice(cromossoms))
-            cromossoms.remove(cromossoms_individuo_1[-1])
-        cromossoms_individuo_2 = cromossoms
-        weights_new_individuo = [self.weights[i] for i in cromossoms_individuo_1] + [individuo2.weights[y] for y in cromossoms_individuo_2]
-        bias_new_individuo = [self.bias[i] for i in cromossoms_individuo_1] + [individuo2.bias[y] for y in cromossoms_individuo_2]
-        return [weights_new_individuo, bias_new_individuo]"""
+    def breed(self, mind2):
+        new_mind = self.__copy__()
+        new_mind.weights = new_mind.cross_over(self.weights, mind2.weights)
+        new_mind.bias = new_mind.cross_over(self.bias, mind2.bias)
+        return new_mind
 
-    def activation_function(self, variables):
-        pass
+    def create_layer_2(self, values):
+        print(self.weights)
+        neuron_1 = tuple(w*values[0]+b for w, b in zip(self.weights[0][0], self.bias[0][0]))
+        neuron_2 = tuple(w*values[1]+b for w, b in zip(self.weights[0][1], self.bias[0][1]))
+        neuron_3 = tuple(w*values[2]+b for w, b in zip(self.weights[0][2], self.bias[0][2]))
+        neuron_4 = tuple(w*values[3]+b for w, b in zip(self.weights[0][3], self.bias[0][3]))
+        neuron_5 = tuple(w*values[4]+b for w, b in zip(self.weights[0][4], self.bias[0][4]))
 
-    def mutation(self):
-        new_w = []
-        new_b = []
-        for w, b in zip(self.weights, self.bias):
-            if random.random() <= self.mutation_chance:
-                new_w.append(w + (random.random() / 10) * random.choice([1, -1]))
-            else:
-                new_w.append(w)
-            if random.random() <= self.mutation_chance:
-                new_b.append(b + (random.random() / 10) * random.choice([1, -1]))
-            else:
-                new_b.append(b)
-        self.weights = new_w
-        self.bias = new_b
+        value_1 = neuron_1[0] * neuron_2[0]
+        value_2 = neuron_1[1] * neuron_3[0]
+        value_3 = neuron_2[1] * neuron_3[1]
+        value_4 = neuron_3[2] * neuron_4[0]
+        value_5 = neuron_3[3] * neuron_5[0]
+        value_6 = neuron_4[1] * neuron_5[1]
 
-    def breed(self, individuo_2, i_name):
-        """novo_individuo = _individuo(self.inputs, i_name, self.mutation_chance)
-        novo_individuo.weights, novo_individuo.bias = self.cross_over(individuo_2)
-        novo_individuo.mutation()
-        return novo_individuo"""
+        return value_1, value_2, value_3, value_4, value_5, value_6
 
+    def create_layer_3(self, values):
+        neuron_1 = self.weights[1][0]*values[0] + self.bias[1][0]
+        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[1][1], self.bias[1][1]))
+        neuron_3 = self.weights[1][2]*values[2] + self.bias[1][2]
+        neuron_4 = self.weights[1][3]*values[3] + self.bias[1][3]
+        neuron_5 = tuple(w * values[4] + b for w, b in zip(self.weights[1][4], self.bias[1][4]))
+        neuron_6 = self.weights[1][5] * values[5] + self.bias[1][5]
 
-class Population:
-    def __init__(self, inputs, maxi, mc):
-        self.lista = []
-        self.generacao = 1
-        self.best_indiv = None
-        self.second_best = None
-        self.numero_input = inputs
-        self.max_indiv = maxi
-        self.mutation_chance = mc
-        self.criar_individuos_novos()
+        value_1 = neuron_1 * neuron_2[0]
+        value_2 = neuron_2[1] * neuron_3
+        value_3 = neuron_4 * neuron_5[0]
+        value_4 = neuron_5[1] * neuron_6
 
-    def criar_individuos_novos(self):
-        """for i in range(self.max_indiv):
-            self.lista.append(_individuo(self.numero_input, i, self.mutation_chance))
-            self.lista[-1].criar_individuo()
-            #print(f"name: {self.lista[ -1].name},weights:{self.lista[ -1].weights}, bias: {self.lista[ -1].bias}")"""
+        return value_1, value_2, value_3, value_4
 
-    def mostrar_atributos_individuos(self):
-        for ind in self.lista:
-            print(f"name: {ind.name},weights:{ind.weights}, bias: {ind.bias}")
+    def create_layer_4(self, values):
+        neuron_1 = self.weights[2][0] * values[0] + self.bias[2][0]
+        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[2][1], self.bias[2][1]))
+        neuron_3 = tuple(w * values[2] + b for w, b in zip(self.weights[2][2], self.bias[2][2]))
+        neuron_4 = self.weights[2][3] * values[3] + self.bias[2][3]
 
-    def gravar_atributos_individuo(self):
-        ficheiro = open("parameters/best_individuos.txt", "a")
-        ficheiro.write(f"Geraçao: {self.generacao}\n")
-        ficheiro.write(f"F:{self.best_indiv.fitness};W:{self.best_indiv.weights};B{self.best_indiv.bias}\n")
-        ficheiro.write(f"F:{self.second_best.fitness};W:{self.second_best.weights};B{self.second_best.bias}\n\n")
-        ficheiro.close()
+        value_1 = neuron_1 * neuron_2[0]
+        value_2 = neuron_2[1] * neuron_3[0]
+        value_3 = neuron_3[1] * neuron_4
 
-    def ler_atributos_individuos(self):
-        ficheiro = open("parameters/geracao_atual.txt", "r")
-        lines = ficheiro.readlines()
-        index = 0
-        for line in lines[1:]:
-            list_line = line.split(";")
-            fit = float(list_line[0][2:])
-            wei = list_line[1][3:-1].split(",")
-            bia = list_line[2][3:-1].split(",")
-            self.lista[index].weights = [float(w) for w in wei]
-            self.lista[index].bias = [float(b) for b in bia[:-1]]
-            self.lista[index].bias.append(float(bia[-1][:-1]))
-            self.lista[index].fitness = fit
-            index += 1
+        return value_1, value_2, value_3
 
-        ficheiro.close()
-        ficheiro = open("parameters/geracao_atual.txt", "w")
-        ficheiro.write(f"Geracao: {self.generacao+1}\n")
-        ficheiro.close()
+    def get_final_value(self, values):
+        neuron_1 = self.weights[3][0] * values[0] + self.bias[3][0]
+        neuron_2 = self.weights[3][1] * values[1] + self.bias[3][1]
+        neuron_3 = self.weights[3][2] * values[2] + self.bias[3][2]
 
-    def select_best(self):
-        fit = -1
-        for indv in self.lista:
-            if indv.fitness >= fit:
-                self.second_best = self.best_indiv
-                self.best_indiv = indv
-                fit = self.best_indiv.fitness
+        return neuron_1 * neuron_2 * neuron_3
 
-    def criar_familia(self):
-        self.generacao += 1
-        self.best_indiv.nome = 0
-        self.second_best.nome = 1
-        self.lista = []
-        self.lista.append(self.best_indiv)
-        self.lista.append(self.second_best)
-        for i in range((self.max_indiv-2)//2):
-            self.lista.append(self.best_indiv.breed(self.second_best, i+2))
-            self.lista.append(self.second_best.breed(self.best_indiv, i+3))
-
+    def activation_function(self, inputs):
+        input_layer = [Aux.normalize(inp) for inp in inputs]
+        layer_2 = self.create_layer_2(input_layer)
+        layer_3 = self.create_layer_3(layer_2)
+        layer_4 = self.create_layer_4(layer_3)
+        return self.get_final_value(layer_4)
