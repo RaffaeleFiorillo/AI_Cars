@@ -1,6 +1,5 @@
 import Entities as Ent
 import Auxiliar as Aux
-import AI
 import pygame
 
 LENGTH = Aux.WINDOW_LENGTH

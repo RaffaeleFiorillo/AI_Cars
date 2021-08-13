@@ -99,11 +99,10 @@ class Car:
         print(how)
         if how < - 0.5:
             self.turn_left()
-        elif how > 0:
+        elif how > 0.5:
             self.turn_right()
-        module = Aux.module(how)
-        updated_x_coo = round(self.x_y_center[0] + (self.speed_module * Aux.sin(-self.angle))*module)
-        updated_y_coo = round(self.x_y_center[1] + (self.speed_module * Aux.cos(self.angle))*module)
+        updated_x_coo = round(self.x_y_center[0] + self.speed_module * Aux.sin(-self.angle))
+        updated_y_coo = round(self.x_y_center[1] + self.speed_module * Aux.cos(self.angle))
 
         distance = Aux.vector_distance(self.x_y_center[0], self.x_y_center[1], updated_x_coo, updated_y_coo)
         self.x_y_center = updated_x_coo, updated_y_coo
@@ -192,8 +191,8 @@ class World:
                 if event.type == pygame.QUIT:
                     return False
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        pass
+                    if event.key == pygame.K_SPACE:
+                        self.cars[self.current_car_index].alive = False
             self.refresh()
 
     def simulation_loop(self):

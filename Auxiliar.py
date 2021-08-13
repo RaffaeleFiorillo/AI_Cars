@@ -5,26 +5,6 @@ import math
 pygame.init()
 
 
-def road_1(screen, color):
-    road_components = [(75, 30, 900, 10), (75, 670, 900, 10), (75, 40, 10, 630), (965, 40, 10, 630),
-                       (200, 140, 640, 10), (210, 560, 630, 10), (200, 140, 10, 430), (840, 140, 10, 430)
-                       ]
-    for component in road_components:
-        pygame.draw.rect(screen, color, component)
-
-
-def road_2(screen):
-    pass
-
-
-def road_3(screen):
-    pass
-
-
-def road_4(screen):
-    pass
-
-
 def sin(angle):
     return round(math.sin(math.radians(angle)))
 
@@ -70,13 +50,14 @@ def get_rhombus_image():
 
 
 rectangles_1 = [(75, 30, 900, 10), (75, 670, 900, 10), (75, 40, 10, 630), (965, 40, 10, 630),
+                ]
+
+rectangles_2 = [(75, 30, 900, 10), (75, 670, 900, 10), (75, 40, 10, 630), (965, 40, 10, 630),
                 (200, 140, 640, 10), (210, 560, 630, 10), (200, 140, 10, 430), (840, 140, 10, 430)
                 ]
-rectangles_2 = []
 rectangles_3 = []
 rectangles_4 = []
 
-ROADS = [road_1, road_2, road_3, road_4]  # list of roads
 ROAD_RECTANGLES = [rectangles_1, rectangles_2, rectangles_3, rectangles_4]  # rectangles-like collision boxes
 
 YELLOW = (255, 255, 0)
