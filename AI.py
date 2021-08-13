@@ -8,7 +8,7 @@ class Mind:
         self.bias = [[], [], [], []]
         self.mutation_chance = Aux.MUTATION_POSSIBILITY
         self.fitness = 0
-        self.energy = 10
+        self.energy = 1000
         self.distance_traveled = 0
         self.time_alive = 0
         if new_born:
@@ -22,7 +22,10 @@ class Mind:
 
     def fitness_level(self):
         power = (1000-self.energy)*self.time_alive
-        speed = self.distance_traveled/self.time_alive
+        try:
+            speed = self.distance_traveled/self.time_alive
+        except ZeroDivisionError:
+            speed = 0
         self.fitness = power*0.5 + speed*0.5
 
     def save_existence(self):
@@ -97,7 +100,6 @@ class Mind:
         return new_mind
 
     def create_layer_2(self, values):
-        print(self.weights)
         neuron_1 = tuple(w*values[0]+b for w, b in zip(self.weights[0][0], self.bias[0][0]))
         neuron_2 = tuple(w*values[1]+b for w, b in zip(self.weights[0][1], self.bias[0][1]))
         neuron_3 = tuple(w*values[2]+b for w, b in zip(self.weights[0][2], self.bias[0][2]))

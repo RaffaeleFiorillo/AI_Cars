@@ -96,7 +96,8 @@ class Car:
             self.alive = False
 
     def move_ahead(self, how):
-        if how < 0:
+        print(how)
+        if how < - 0.5:
             self.turn_left()
         elif how > 0:
             self.turn_right()
@@ -153,7 +154,8 @@ class World:
         file.write("\n###############################################\n\n")
         file.close()
 
-    def breed_minds(self, minds):
+    @staticmethod
+    def breed_minds(minds):
         new_minds = []
         for i in range(3):
             for y in range(5):
@@ -175,7 +177,6 @@ class World:
     def refresh(self):
         self.screen.fill((0, 0, 0))  # Background
         self.road.draw(self.screen)
-        self.cars[self.current_car_index].mind.time_alive = self.time_passed
         self.cars[self.current_car_index].movement(self.screen)
         self.cars[self.current_car_index].draw(self.screen)
         self.run = self.car_is_alive()
@@ -185,8 +186,7 @@ class World:
     def loop(self):
         self.time_passed = 0
         while self.run:
-            print(self.cars[self.current_car_index].mind.weights)
-            self.time_passed += self.clock.tick(Aux.FRAME_RATE) / (33 * 30)
+            self.cars[self.current_car_index].mind.time_alive += self.clock.tick(Aux.FRAME_RATE) / (33 * 30)
             # terminate execution
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -199,9 +199,11 @@ class World:
     def simulation_loop(self):
         while True:
             self.loop()
-            self.current_car_index += 1
+            self.cars[self.current_car_index].mind.fitness_level()
+
             self.time_passed = 0
-            if self.current_car_index > self.max_cars:
+            self.current_car_index += 1
+            if self.current_car_index == self.max_cars:
                 self.current_car_index = 0
                 self.create_new_generation()
                 self.run = True
