@@ -148,22 +148,25 @@ class World:
         self.clock = pygame.time.Clock()
 
     def save_best_minds(self, minds):
+        title = f"\nGeneration: {self.current_generation}\n"
+        print(title)
         file = open(Aux.FILE_NAME, "a")
-        file.write(f"Generation {self.current_generation}: \n")
+        file.write(title)
         file.close()
-        for mind in minds:
-            mind.save_existence()
+        minds[0].save_existence()
+        minds[1].save_existence()
+        minds[2].save_existence()
         file = open(Aux.FILE_NAME, "a")
         file.write("\n###############################################\n\n")
         file.close()
 
     @staticmethod
     def breed_minds(minds):
-        new_minds = []
+        new_minds = minds
         for i in range(3):
-            for y in range(5):
+            for y in range(3):
                 new_minds.append(minds[i].breed(minds[y]))
-        other_minds = [AI.Mind(i) for i in range(15, 20)]
+        other_minds = [AI.Mind(i) for i in range(len(new_minds), 20)]
         return new_minds + other_minds
 
     def create_new_generation(self):

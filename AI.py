@@ -9,7 +9,7 @@ class Mind:
         self.directions_taken = {"left": 0, "center": 0, "right": 0}
         self.mutation_chance = Aux.MUTATION_POSSIBILITY
         self.fitness = 0
-        self.energy = 1000
+        self.energy = 4000
         self.monotony_should_be_1 = False
         self.distance_traveled = 0
         self.time_alive = 0
@@ -17,18 +17,18 @@ class Mind:
             self.create_mind()
 
     def __copy__(self):
-        new_mind = Mind(f"{self.name}_copy", False)
+        copy_number = 1
+        index = len(self.name)
+        if "_" in self.name:
+            copy_number = str(int(self.name[-1])+1)
+            index = self.name.index('_')
+        new_mind = Mind(f"{self.name[index:]}_{copy_number}", False)
         new_mind.weights = self.bias
         new_mind.bias = self.bias
         return new_mind
 
     def fitness_level(self):
         power = Aux.normal_minus1_1((1000-self.energy), 0, 1000)*-1
-
-        try:
-            speed = Aux.normal_minus1_1(self.distance_traveled/self.time_alive, 0, 800)
-        except ZeroDivisionError:
-            speed = 0
 
         if self.monotony_should_be_1:
             monotony = 1
@@ -38,12 +38,18 @@ class Mind:
             monotony = Aux.vectorized(left_monotony, right_monotony)
             monotony = Aux.module(1-Aux.normal_minus1_1(monotony, 0, 1000))
 
-        print(monotony)
-        self.fitness = (power*0.5 + speed*0.5)*monotony
-        # print(f"Name: {self.name} | Fitness: {self.fitness} Monotony: {monotony} Power: {power}")
+        self.fitness = (power * 0.5 + self.distance_traveled * 0.5) * monotony
+        print(f"Name: {self.name} | Fitness: {self.fitness} Monotony: {monotony} Power: {power}"
+              f" | Distance: {self.distance_traveled}")
+        if self.fitness >= 70000:
+            self.save_existence(override=True)
+            exit()
 
-    def save_existence(self):
+    def save_existence(self, override=False):
         file = open(Aux.FILE_NAME, "a")
+        if override:
+            file.close()
+            file = open(Aux.FILE_NAME, "w")
         file.write(f"F:{self.fitness};W:{self.weights};B:{self.bias}\n")
         file.close()
 
