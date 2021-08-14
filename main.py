@@ -12,8 +12,10 @@ ROAD_COLOR = Aux.ROAD_COLOR
 screen = pygame.display.set_mode((LENGTH, HEIGHT))
 pygame.display.set_caption(LABEL)
 
-WORLD = Ent.World(screen, ROAD_COLOR, ROAD)
-WORLD.simulation_loop()
+# WORLD = Ent.World(screen, ROAD_COLOR, ROAD)
+WORLD = Ent.Training_World(screen, ROAD_COLOR, ROAD)
+# WORLD.loop()
+WORLD.simulation_loop()  # for the training world
 
 
 """first_mind = AI.Mind(0)

@@ -139,13 +139,44 @@ class World:
         self.screen_width = self.screen.get_size()[0]
         self.screen_height = self.screen.get_size()[1]
         self.road = Road(Aux.ROAD_RECTANGLES[road_type], road_color)
+        self.run = True
+        self.car = Car(AI.Brain())
+        self.car.mind.initialize_brain()
+        self.clock = pygame.time.Clock()
+
+    def car_is_alive(self):
+        return self.car.alive
+
+    def refresh(self):
+        self.screen.fill((0, 0, 0))  # Background
+        self.road.draw(self.screen)
+        self.car.draw(self.screen)
+        self.car.movement(self.screen)
+        self.run = self.car_is_alive()
+
+        pygame.display.update()
+
+    def loop(self):
+        while self.run:
+            self.clock.tick(Aux.FRAME_RATE)
+            # terminate execution
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        exit()
+            self.refresh()
+
+
+class Training_World(World):
+    def __init__(self, screen, road_color, road_type=0):
+        super().__init__(screen, road_color, road_type)
         self.max_cars = Aux.MAX_CAR_NUMBER
         self.cars = [Car(AI.Mind(i)) for i in range(self.max_cars)]
         self.current_car_index = 0
         self.time_passed = 0
         self.current_generation = 0
-        self.run = True
-        self.clock = pygame.time.Clock()
 
     def save_best_minds(self, minds):
         title = f"\nGeneration: {self.current_generation}\n"

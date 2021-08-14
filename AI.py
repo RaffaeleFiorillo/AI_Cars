@@ -1,18 +1,84 @@
 import Auxiliar as Aux
 
 
-class Mind:
-    def __init__(self, name, new_born=True):
-        self.name = str(name)
+class Brain:
+    def __init__(self):
         self.weights = [[], [], []]
         self.bias = []
-        self.directions_taken = {"left": 0, "center": 0, "right": 0}
-        self.mutation_chance = Aux.MUTATION_POSSIBILITY
-        self.fitness = 0
-        self.energy = 4000
-        self.monotony_should_be_1 = False
         self.distance_traveled = 0
         self.time_alive = 0
+        self.fitness = 0
+        self.energy = 4000
+
+    def initialize_brain(self):
+        self.weights = Aux.WEIGHTS
+        self.bias = Aux.BIAS
+
+    def create_layer_2(self, values):
+        neuron_1 = tuple(w*values[0]+b for w, b in zip(self.weights[0][0], self.bias[0][0]))
+        neuron_2 = tuple(w*values[1]+b for w, b in zip(self.weights[0][1], self.bias[0][1]))
+        neuron_3 = tuple(w*values[2]+b for w, b in zip(self.weights[0][2], self.bias[0][2]))
+        neuron_4 = tuple(w*values[3]+b for w, b in zip(self.weights[0][3], self.bias[0][3]))
+        neuron_5 = tuple(w*values[4]+b for w, b in zip(self.weights[0][4], self.bias[0][4]))
+
+        value_1 = Aux.normal_minus1_1(neuron_1[0] + neuron_2[0])
+        value_2 = Aux.normal_minus1_1(neuron_1[1] + neuron_3[0])
+        value_3 = Aux.normal_minus1_1(neuron_2[1] + neuron_3[1])
+        value_4 = Aux.normal_minus1_1(neuron_3[2] + neuron_4[0])
+        value_5 = Aux.normal_minus1_1(neuron_3[3] + neuron_5[0])
+        value_6 = Aux.normal_minus1_1(neuron_4[1] + neuron_5[1])
+
+        return value_1, value_2, value_3, value_4, value_5, value_6
+
+    def create_layer_3(self, values):
+        neuron_1 = self.weights[1][0]*values[0] + self.bias[1][0]
+        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[1][1], self.bias[1][1]))
+        neuron_3 = self.weights[1][2]*values[2] + self.bias[1][2]
+        neuron_4 = self.weights[1][3]*values[3] + self.bias[1][3]
+        neuron_5 = tuple(w * values[4] + b for w, b in zip(self.weights[1][4], self.bias[1][4]))
+        neuron_6 = self.weights[1][5] * values[5] + self.bias[1][5]
+
+        value_1 = Aux.normal_minus1_1(neuron_1 + neuron_2[0])
+        value_2 = Aux.normal_minus1_1(neuron_2[1] + neuron_3)
+        value_3 = Aux.normal_minus1_1(neuron_4 + neuron_5[0])
+        value_4 = Aux.normal_minus1_1(neuron_5[1] + neuron_6)
+
+        return value_1, value_2, value_3, value_4
+
+    def create_layer_4(self, values):
+        neuron_1 = self.weights[2][0] * values[0] + self.bias[2][0]
+        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[2][1], self.bias[2][1]))
+        neuron_3 = tuple(w * values[2] + b for w, b in zip(self.weights[2][2], self.bias[2][2]))
+        neuron_4 = self.weights[2][3] * values[3] + self.bias[2][3]
+
+        value_1 = Aux.normal_minus1_1(neuron_1 + neuron_2[0])
+        value_2 = Aux.normal_minus1_1(neuron_2[1] + neuron_3[0])
+        value_3 = Aux.normal_minus1_1(neuron_3[1] + neuron_4)
+
+        return value_1, value_2, value_3
+
+    def get_final_value(self, values):
+        neuron_1 = self.weights[3][0] * values[0] + self.bias[3][0]
+        neuron_2 = self.weights[3][1] * values[1] + self.bias[3][1]
+        neuron_3 = self.weights[3][2] * values[2] + self.bias[3][2]
+
+        return Aux.normal_minus1_1(neuron_1 + neuron_2 + neuron_3)
+
+    def activation_function(self, inputs):
+        input_layer = [Aux.normalize(inp) for inp in inputs]
+        layer_2 = self.create_layer_2(input_layer)
+        layer_3 = self.create_layer_3(layer_2)
+        layer_4 = self.create_layer_4(layer_3)
+        return self.get_final_value(layer_4)
+
+
+class Mind(Brain):
+    def __init__(self, name, new_born=True):
+        super().__init__()
+        self.name = str(name)
+        self.directions_taken = {"left": 0, "center": 0, "right": 0}
+        self.mutation_chance = Aux.MUTATION_POSSIBILITY
+        self.monotony_should_be_1 = False
         if new_born:
             self.create_mind()
 
@@ -119,59 +185,4 @@ class Mind:
         new_mind.bias = new_mind.cross_over(self.bias, mind2.bias)
         return new_mind
 
-    def create_layer_2(self, values):
-        neuron_1 = tuple(w*values[0]+b for w, b in zip(self.weights[0][0], self.bias[0][0]))
-        neuron_2 = tuple(w*values[1]+b for w, b in zip(self.weights[0][1], self.bias[0][1]))
-        neuron_3 = tuple(w*values[2]+b for w, b in zip(self.weights[0][2], self.bias[0][2]))
-        neuron_4 = tuple(w*values[3]+b for w, b in zip(self.weights[0][3], self.bias[0][3]))
-        neuron_5 = tuple(w*values[4]+b for w, b in zip(self.weights[0][4], self.bias[0][4]))
 
-        value_1 = Aux.normal_minus1_1(neuron_1[0] + neuron_2[0])
-        value_2 = Aux.normal_minus1_1(neuron_1[1] + neuron_3[0])
-        value_3 = Aux.normal_minus1_1(neuron_2[1] + neuron_3[1])
-        value_4 = Aux.normal_minus1_1(neuron_3[2] + neuron_4[0])
-        value_5 = Aux.normal_minus1_1(neuron_3[3] + neuron_5[0])
-        value_6 = Aux.normal_minus1_1(neuron_4[1] + neuron_5[1])
-
-        return value_1, value_2, value_3, value_4, value_5, value_6
-
-    def create_layer_3(self, values):
-        neuron_1 = self.weights[1][0]*values[0] + self.bias[1][0]
-        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[1][1], self.bias[1][1]))
-        neuron_3 = self.weights[1][2]*values[2] + self.bias[1][2]
-        neuron_4 = self.weights[1][3]*values[3] + self.bias[1][3]
-        neuron_5 = tuple(w * values[4] + b for w, b in zip(self.weights[1][4], self.bias[1][4]))
-        neuron_6 = self.weights[1][5] * values[5] + self.bias[1][5]
-
-        value_1 = Aux.normal_minus1_1(neuron_1 + neuron_2[0])
-        value_2 = Aux.normal_minus1_1(neuron_2[1] + neuron_3)
-        value_3 = Aux.normal_minus1_1(neuron_4 + neuron_5[0])
-        value_4 = Aux.normal_minus1_1(neuron_5[1] + neuron_6)
-
-        return value_1, value_2, value_3, value_4
-
-    def create_layer_4(self, values):
-        neuron_1 = self.weights[2][0] * values[0] + self.bias[2][0]
-        neuron_2 = tuple(w * values[1] + b for w, b in zip(self.weights[2][1], self.bias[2][1]))
-        neuron_3 = tuple(w * values[2] + b for w, b in zip(self.weights[2][2], self.bias[2][2]))
-        neuron_4 = self.weights[2][3] * values[3] + self.bias[2][3]
-
-        value_1 = Aux.normal_minus1_1(neuron_1 + neuron_2[0])
-        value_2 = Aux.normal_minus1_1(neuron_2[1] + neuron_3[0])
-        value_3 = Aux.normal_minus1_1(neuron_3[1] + neuron_4)
-
-        return value_1, value_2, value_3
-
-    def get_final_value(self, values):
-        neuron_1 = self.weights[3][0] * values[0] + self.bias[3][0]
-        neuron_2 = self.weights[3][1] * values[1] + self.bias[3][1]
-        neuron_3 = self.weights[3][2] * values[2] + self.bias[3][2]
-
-        return Aux.normal_minus1_1(neuron_1 + neuron_2 + neuron_3)
-
-    def activation_function(self, inputs):
-        input_layer = [Aux.normalize(inp) for inp in inputs]
-        layer_2 = self.create_layer_2(input_layer)
-        layer_3 = self.create_layer_3(layer_2)
-        layer_4 = self.create_layer_4(layer_3)
-        return self.get_final_value(layer_4)
